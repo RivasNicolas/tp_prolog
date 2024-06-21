@@ -5,23 +5,44 @@
 %% Ejercicio 1
 %% tablero(+Filas,+Columnas,-Tablero) instancia una estructura de tablero en blanco
 %% de Filas x Columnas, con todas las celdas libres.
-tablero(_,_,_).
+%%FA = filaActualizada
+tablero(0,_,[]).
+tablero(F,C,[L|T]) :- F > 0, FA is F - 1, listaNelementos(C,L), tablero(FA,C,T).
+
+%% listaNelementos(+Largo, -Lista) instancia una lista de N elementos.
+listaNelementos(0,[]).
+listaNelementos(N, [_|XS]) :- N > 0, N1 is N - 1, listaNelementos(N1, XS).
 
 %% Ejercicio 2
 %% ocupar(+Pos,?Tablero) será verdadero cuando la posición indicada esté ocupada.
-ocupar(_,_).
+%%FM = filaMatriz
+%%FMS = filasMatriz
+%%CSM = columnasMatriz
+%%CM = columnaMatriz
+%%F = cantidadFilas
+%%C = cantidadColumnas
+ocupar(pos(0,0),[[ocupada|_]|_]).
+ocupar(pos(0, C), [[_|CSM]|FSM]) :- C > 0, C1 is C - 1, ocupar(pos(0, C1), [CSM|FSM]).
+ocupar(pos(F, C), [_|FSM]) :- F > 0, F1 is F - 1, ocupar(pos(F1, C), FSM).
+
+tablero(ej5x5, T) :- tablero(5, 5, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T).
 
 %% Ejercicio 3
 %% vecino(+Pos, +Tablero, -PosVecino) será verdadero cuando PosVecino sea
 %% un átomo de la forma pos(F', C') y pos(F',C') sea una celda contigua a
 %% pos(F,C), donde Pos=pos(F,C). Las celdas contiguas puede ser a lo sumo cuatro
 %% dado que el robot se moverá en forma ortogonal.
-vecino(_,_,_).
+cantColumnas([X|_],C) :- length(X,C).
+
+vecino(pos(F,C),T,pos(F2,C)):- length(T,TF), F + 1 < TF, F2 is F + 1.
+vecino(pos(F,C),_,pos(F2,C)):- F > 0, F2 is F - 1.
+vecino(pos(F,C),T,pos(F,C2)):- cantColumnas(T,TC), C + 1 < TC, C2 is C + 1.
+vecino(pos(F,C),_,pos(F,C2)):- C > 0, C2 is C - 1.
 
 %% Ejercicio 4
 %% vecinoLibre(+Pos, +Tablero, -PosVecino) idem vecino/3 pero además PosVecino
 %% debe ser una celda transitable (no ocupada) en el Tablero
-vecinoLibre(_,_,_).
+vecinoLibre(Pos,Tablero,PosVecino) :- vecino(Pos,Tablero,PosVecino), not(ocupar(PosVecino, Tablero)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Definicion de caminos
