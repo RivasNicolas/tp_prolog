@@ -74,7 +74,12 @@ caminoAux(I, F, T, L, LAUX) :- I \= F, posicionCorrecta(F, T), not(estaOcupada(F
 
 %% 5.1. Analizar la reversibilidad de los parámetros Fin y Camino justificando adecuadamente en cada
 %% caso por qué el predicado se comporta como lo hace
-%%Fin no reversible
+
+%%Analisis de reversibilidad:
+%% Fin no es reversible ya que en nuestro predicado estamos usando I\=F, por lo tanto ambos tienen que estar si o si instanciados ya que estamos haciendo una operacion aritmetica.
+%% Camino es reversible y al pasarle este instanciado al predicado camino lo que va a hacer es devolver True si el camino es un camino valido en ese tablero
+
+%%ERROR RARO QUE VIMOS CON MATE: CUANDO HACEMOS LA CONSULTA CON TABLERO DEL CASO DE TEST NOS DA FALSE, PERO CUANDO HARDCODEAMOS EN LA CONSULTA EL TABLERO NOS DA TRUE COMO ESTAMOS ESPERANDO.
 
 
 %% Ejercicio 6
@@ -87,7 +92,7 @@ camino2(I,F,T,C) :- cantColumnas(T, NC), length(T, NF), MAX is NC * NF, between(
 
 %% 6.1. Analizar la reversibilidad de los parámetros Inicio y Camino justificando adecuadamente en
 %% cada caso por qué el predicado se comporta como lo hace.
-
+%%Inicio
 
 %% Ejercicio 7
 %% caminoOptimo(+Inicio, +Fin, +Tablero, -Camino) será verdadero cuando Camino sea un
