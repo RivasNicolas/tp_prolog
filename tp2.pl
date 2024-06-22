@@ -7,16 +7,16 @@
 %% de Filas x Columnas, con todas las celdas libres.
 %%FA = filaActualizada
 tablero(0,_,[]).
-tablero(F,C,[L|T]) :- F > 0, FA is F - 1, listaNelementos(C,L), tablero(FA,C,T).
+tablero(F,C,[L|T]) :- F > 0, FA is F - 1, length(L, C), tablero(FA,C,T).
 
 %% listaNelementos(+Largo, -Lista) instancia una lista de N elementos.
-listaNelementos(0,[]).
-listaNelementos(N, [_|XS]) :- N > 0, N1 is N - 1, listaNelementos(N1, XS).
+%%listaNelementos(0,[]).
+%%listaNelementos(N, [_|XS]) :- N > 0, N1 is N - 1, listaNelementos(N1, XS).
 
 %% Ejercicio 2
 %% ocupar(+Pos,?Tablero) será verdadero cuando la posición indicada esté ocupada.
 %%FM = filaMatriz
-%%FMS = filasMatriz
+%%FSM = filasMatriz
 %%CSM = columnasMatriz
 %%CM = columnaMatriz
 %%F = cantidadFilas
@@ -26,6 +26,9 @@ ocupar(pos(0, C), [[_|CSM]|FSM]) :- C > 0, C1 is C - 1, ocupar(pos(0, C1), [CSM|
 ocupar(pos(F, C), [_|FSM]) :- F > 0, F1 is F - 1, ocupar(pos(F1, C), FSM).
 
 tablero(ej5x5, T) :- tablero(5, 5, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T).
+tablero(ej4x4, T) :- tablero(4, 4, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T).
+tablero(ej3x3, T) :- tablero(3, 3, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T).
+tablero(ej2x2, T) :- tablero(2, 2, T).
 
 %% Ejercicio 3
 %% vecino(+Pos, +Tablero, -PosVecino) será verdadero cuando PosVecino sea
@@ -34,15 +37,22 @@ tablero(ej5x5, T) :- tablero(5, 5, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T
 %% dado que el robot se moverá en forma ortogonal.
 cantColumnas([X|_],C) :- length(X,C).
 
-vecino(pos(F,C),T,pos(F2,C)):- length(T,TF), F + 1 < TF, F2 is F + 1.
-vecino(pos(F,C),_,pos(F2,C)):- F > 0, F2 is F - 1.
-vecino(pos(F,C),T,pos(F,C2)):- cantColumnas(T,TC), C + 1 < TC, C2 is C + 1.
-vecino(pos(F,C),_,pos(F,C2)):- C > 0, C2 is C - 1.
+posicionCorrecta(pos(F, C), T) :- length(T,TF), F >= 0, F < TF, cantColumnas(T, TC), C < TC, C >= 0.
+
+vecino(pos(F,C),T,pos(F2,C)):- posicionCorrecta(pos(F, C), T), F2 is F + 1, posicionCorrecta(pos(F2, C), T).
+vecino(pos(F,C),T,pos(F2,C)):- posicionCorrecta(pos(F, C), T), F2 is F - 1, posicionCorrecta(pos(F2, C), T).
+vecino(pos(F,C),T,pos(F,C2)):- posicionCorrecta(pos(F, C), T), C2 is C + 1, posicionCorrecta(pos(F, C2), T).
+vecino(pos(F,C),T,pos(F,C2)):- posicionCorrecta(pos(F, C), T), C2 is C - 1, posicionCorrecta(pos(F, C2), T).
 
 %% Ejercicio 4
 %% vecinoLibre(+Pos, +Tablero, -PosVecino) idem vecino/3 pero además PosVecino
 %% debe ser una celda transitable (no ocupada) en el Tablero
-vecinoLibre(Pos,Tablero,PosVecino) :- vecino(Pos,Tablero,PosVecino), not(ocupar(PosVecino, Tablero)).
+
+estaOcupada(pos(0,0),[[X|_]|_]) :- nonvar(X), X = ocupada.
+estaOcupada(pos(0,C),[[_|CSM]|FSM]) :- C > 0, C1 is C-1, estaOcupada(pos(0,C1),[CSM|FSM]).
+estaOcupada(pos(F,C),[_|FSM]) :- F > 0,F1 is F-1, estaOcupada(pos(F1,C),FSM).
+
+vecinoLibre(Pos,Tablero,PosVecino) :- vecino(Pos,Tablero,PosVecino), not(estaOcupada(PosVecino, Tablero)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Definicion de caminos
@@ -56,17 +66,24 @@ vecinoLibre(Pos,Tablero,PosVecino) :- vecino(Pos,Tablero,PosVecino), not(ocupar(
 %% Notar que la cantidad de caminos es finita y por ende se tiene que poder recorrer
 %% todas las alternativas eventualmente.
 %% Consejo: Utilizar una lista auxiliar con las posiciones visitadas
-camino(_,_,_,_).
+camino(I, F, T, L) :- caminoAux(I, F, T, L, []).
+
+caminoAux(F, F, T, L, LAUX) :- posicionCorrecta(F, T), not(estaOcupada(F,T)), append(LAUX, [F], L).
+caminoAux(I, F, T, L, LAUX) :- I \= F, posicionCorrecta(F, T), not(estaOcupada(F,T)), posicionCorrecta(I, T), not(estaOcupada(I,T)), vecinoLibre(I, T, V), 
+                  not(member(V, LAUX)), append(LAUX, [I], LAUX1), caminoAux(V, F, T, L, LAUX1).
 
 %% 5.1. Analizar la reversibilidad de los parámetros Fin y Camino justificando adecuadamente en cada
 %% caso por qué el predicado se comporta como lo hace
-
+%%Fin no reversible
 
 
 %% Ejercicio 6
 %% camino2(+Inicio, +Fin, +Tablero, -Camino) ídem camino/4 pero que las soluciones
 %% se instancien en orden creciente de longitud.
-camino2(_,_,_,_).
+desde(X, X).
+desde(X, Y) :- N is X + 1, desde(N, Y).
+
+camino2(I,F,T,C) :- cantColumnas(T, NC), length(T, NF), MAX is NC * NF, between(1, MAX, N), camino(I, F, T, C), length(C, N).
 
 %% 6.1. Analizar la reversibilidad de los parámetros Inicio y Camino justificando adecuadamente en
 %% cada caso por qué el predicado se comporta como lo hace.
@@ -75,7 +92,7 @@ camino2(_,_,_,_).
 %% Ejercicio 7
 %% caminoOptimo(+Inicio, +Fin, +Tablero, -Camino) será verdadero cuando Camino sea un
 %% camino óptimo sobre Tablero entre Inicio y Fin. Notar que puede no ser único.
-caminoOptimo(_,_,_,_).
+caminoOptimo(I,F,T,C) :- camino(I, F, T, C), not((camino(I, F, T, C1), length(C, L), length(C1, L1), L1 < L)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Tableros simultáneos
@@ -85,7 +102,7 @@ caminoOptimo(_,_,_,_).
 %% caminoDual(+Inicio, +Fin, +Tablero1, +Tablero2, -Camino) será verdadero
 %% cuando Camino sea un camino desde Inicio hasta Fin pasando al mismo tiempo
 %% sólo por celdas transitables de ambos tableros.
-caminoDual(_,_,_,_,_).
+caminoDual(I,F,T1,T2,C) :- camino(I, F, T1, C), camino(I, F, T2, C).
 
 %%%%%%%%
 %% TESTS
