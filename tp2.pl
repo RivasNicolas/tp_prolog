@@ -21,9 +21,13 @@ tablero(Filas,Columnas,[Lista|Tablero]) :- Filas > 0, Columnas > 0, FilasAnterio
 %% tablero2(+Casillas, -Tablero, -Filas, -Columnas) será verdadero cuando la cantidad de celdas del Tablero sea igual a Casillas, con tantas filas como Filas y tantas columnas como Columnas.
 tablero2(Casillas, Tablero, Filas, Columnas) :- between(1, Casillas, Filas), Columnas is Casillas / Filas, Casillas is Filas * Columnas, tablero(Filas, Columnas, Tablero).
 
+%% desde(+X, -Y)
+desde(X, X).
+desde(X, Y) :- N is X + 1, desde(N, Y).
+
 ocupar(pos(0,0), T) :- nonvar(T), T = [[ocupada|_]|_].
-ocupar(pos(0, C), [[_|CSM]|FSM]) :- C > 0, C1 is C - 1, ocupar(pos(0, C1), [CSM|FSM]).
-ocupar(pos(F, C), [_|FSM]) :- F > 0, F1 is F - 1, ocupar(pos(F1, C), FSM).
+ocupar(pos(0, C), T) :- nonvar(T), T = [[_|CSM]|FSM], C > 0, C1 is C - 1, ocupar(pos(0, C1), [CSM|FSM]).
+ocupar(pos(F, C), T) :- nonvar(T), T = [_|FSM], F > 0, F1 is F - 1, ocupar(pos(F1, C), FSM).
 ocupar(pos(Fila, Columna), Tablero) :- var(Tablero), CasillasMin is (Fila + 1) * (Columna + 1), desde(CasillasMin, Casillas), 
                                         tablero2(Casillas, Tablero, Filas, Columnas), Filas > Fila, Columnas > Columna, ocupar(pos(Fila, Columna), Tablero).
 
@@ -33,7 +37,7 @@ ocupar(pos(Fila, Columna), Tablero) :- var(Tablero), CasillasMin is (Fila + 1) *
 %% pos(F,C), donde Pos=pos(F,C). Las celdas contiguas puede ser a lo sumo cuatro
 %% dado que el robot se moverá en forma ortogonal.
 
-%% cantColumnas(+Tablero, -Columnas) será verdadero cuando Columnas sea la cantidad de columnas del tablero.
+%% cantColumnas(+Tablero, -Columnas) será verdadero cuando Columnas sea la cantidad de columnas del tablero. No tomamos como válido un tablero de 0 filas.
 cantColumnas([X|_],Columnas) :- length(X,Columnas).
 
 %% posicionCorrecta(+Pos, +Tablero) será verdadero cuando Pos sea una posición posible del tablero.
@@ -48,13 +52,14 @@ vecino(pos(F,C),T,pos(F,C2)):- posicionCorrecta(pos(F, C), T), C2 is C - 1, posi
 %% vecinoLibre(+Pos, +Tablero, -PosVecino) idem vecino/3 pero además PosVecino
 %% debe ser una celda transitable (no ocupada) en el Tablero
 
-%% estaOcupada(+Pos, +Tablero) 
+%% estaOcupada(+Pos, +Tablero). Será verdadero cuando la posición indicada esté ocupada y falso cuando este no ocurra.
 estaOcupada(pos(0,0),[[X|_]|_]) :- nonvar(X), X = ocupada.
 estaOcupada(pos(0,C),[[_|CSM]|FSM]) :- C > 0, C1 is C-1, estaOcupada(pos(0,C1),[CSM|FSM]).
 estaOcupada(pos(F,C),[_|FSM]) :- F > 0, F1 is F-1, estaOcupada(pos(F1,C),FSM).
 
 vecinoLibre(Pos,Tablero,PosVecino) :- vecino(Pos,Tablero,PosVecino), not(estaOcupada(PosVecino, Tablero)).
-%% Utiliza la técnica de Generate&Test. Se generan todos los vecinos, para luego testear cuáles están libres.
+%% ComentarioDelGrupo: 
+%% Utiliza la técnica de Generate&Test. Se generan todos los vecinos, para luego testear cuáles no están ocupados.
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Definicion de caminos
@@ -69,7 +74,8 @@ vecinoLibre(Pos,Tablero,PosVecino) :- vecino(Pos,Tablero,PosVecino), not(estaOcu
 %% todas las alternativas eventualmente.
 %% Consejo: Utilizar una lista auxiliar con las posiciones visitadas
 
-%%caminoAux(+Inicio, +Fin, +Tablero, -Camino, +Visitados)
+%% caminoAux(+Inicio, +Fin, +Tablero, ?Camino, +Visitados)
+%% Visitados se instancia con la lista auxiliar con las posiciones visitadas. 
 caminoAux(Fin, Fin, Tablero, Camino, Visitados) :- posicionCorrecta(Fin, Tablero), not(estaOcupada(Fin,Tablero)), append(Visitados, [Fin], Camino).
 caminoAux(Inicio, Fin, Tablero, Camino, Visitados) :- Inicio \= Fin, posicionCorrecta(Fin, Tablero), not(estaOcupada(Fin,Tablero)), 
                   posicionCorrecta(Inicio, Tablero), not(estaOcupada(Inicio,Tablero)), vecinoLibre(Inicio, Tablero, Vecino), 
@@ -81,26 +87,71 @@ camino(Inicio, Fin, Tablero, Camino) :- caminoAux(Inicio, Fin, Tablero, Camino, 
 %% caso por qué el predicado se comporta como lo hace
 
 %%Análisis de reversibilidad:
-%% Fin no es reversible. Esto se debe a que en nuestro predicado estamos usando I\=F, al tratarse de una operación aritmética tanto las variables de Inicio como de Fin deben estar instanciadas.
-%% Camino es reversible y al pasarle este instanciado al predicado camino lo que va a hacer es devolver True si el camino es un camino valido en ese tablero //REVISAR
+%% Si Fin no está instanciada, caminoAux/5 instancia Fin en Inicio producto de la primera cláusula. 
+%% Luego, si Inicio es una posición correcta del Tablero que no está ocupada, append\3 arrojará el resultado Camino = [Inicio] debido a que Visitados está instanciado en [].  
+%% Por ende, este también será el resultado de camino/4 si Camino no se encuentra instanciada. Si se encuentra instanciada, devolverá True si es igual al resultado del append.
+%% Al pedirle más resultados, y entrar en la segunda cláusula de caminoAux/5, el resultado es false pues se utiliza el operador \= y Fin, que no se encuentra instanciada, es uno de sus términos.
+%% Recordamos, X \= Y: X no unifica con Y. Ambos términos deben estar instanciados.
+%% En caso de que Inicio no sea una posición correcta del Tablero, la consulta será false. Es la respuesta de la primera cláusula debido al predicado posicionCorrecta\2 y 
+%% en la segunda cláusula por lo explicado anteriormente del operador \=.
+%% Entendemos que este comportamiento no sería el esperado, el predicado camino\4 llamado con una posición instanciada de Inicio correcta para el Tablero instanciado y 
+%% un Camino también instanciado con un camino válido para el Tablero con su primera posición en Inicio, arroja false si no se instancia Fin. Y si no se instancia Camino, sólo se arroja un
+%% resultado posible que es [Inicio], si Inicio es una posición válida.
+
+%% Si Fin está instanciada y reduce con Inicio, entra por la primera cláusula de caminoAux/5 y la respuesta dependerá de si Fin es una posición correcta del tablero o no.
+%% En el primer caso, si Camino no se encuentra instanciada arrojará el resultado del append entre Visitados, inicialmente instanciada en [], y [Fin].
+%% Si Camino sí se encuentra instanciada, el predicado será true si el resultado del append coincide con Camino. 
+%% En el segundo caso, false pues este también es el resultado al entrar en la segunda cláusula ya que no vale Inicio \= Fin.
+%% Este es el comportamiento esperado.
+%% Si Fin está instanciada y no reduce con Inicio, no entra en la primera cláusula. Al entrar en la segunda, el predicado será false si alguno de los siguientes lo es
+%% posicionCorrecta(Fin, Tablero), not(estaOcupada(Fin,Tablero)), posicionCorrecta(Inicio, Tablero), not(estaOcupada(Inicio,Tablero)). En caso de que ninguno lo sea, 
+%% se instancia un vecino libre a través del predicado vecinoLibre\3. Si este cumple que no pertenece a Visitados se llama nuevamente a caminoAux\5 con el vecino en el primer argumento.
+%% Este proceso se repetirá hasta que Vecino reduzca con Fin, caso que ya fue explicado que funciona correctamente. Esto puede no suceder nunca, en el caso de que no exista un camino entre
+%% las dos casillas enviadas. Este caso eventualmente dará false ya que por la instanciación de las variables el único predicado que cuenta con varios resultados posibles es vecinoLibre\3. 
+%% El otro podría ser append\3 pero Visitados e [Inicio] siempre se encuentran instanciados, llevando a un resultado único que el append instancia en Visitados1.
+%% Retomando, el máximo de soluciones de vecinoLibre\3 son 4 debido a las características del tablero. Además, la cantidad de casillas en un tablero son finitas y, como no se repiten estas en
+%% una búsqueda de resultado debido a not(member(Vecino, Visitados)), el árbol de búsqueda de caminoAux\5 con la instanciación caminoAux(+Inicio, +Fin, +Tablero, ?Camino, +Visitados) es finito.
+%% Por lo que si no existe un camino, independiemente de la instanciación de Camino, la respuesta será false.
+%% Entonces, el comportamiento de camino/4 con la instanciación camino(+Inicio, +Fin, +Tablero, ?Camino) es correcto.
+
+%% Concluimos que Camino es reversible y Fin no.
 
 
 %% Ejercicio 6
 %% camino2(+Inicio, +Fin, +Tablero, -Camino) ídem camino/4 pero que las soluciones
 %% se instancien en orden creciente de longitud.
 
-camino2(I,F,T,C) :- cantColumnas(T, NC), length(T, NF), MAX is NC * NF, between(1, MAX, N), camino(I, F, T, C), length(C, N).
+camino2(Inicio,Fin,Tablero,Camino) :- cantColumnas(Tablero, NumColumnas), length(Tablero, NumFilas), MAX is NumColumnas * NumFilas, between(1, MAX, N), 
+                                      camino(Inicio, Fin, Tablero, Camino), length(Camino, N).
 
 %% ComentarioDelGrupo: 
 %% Se crea una cota máxima. Va a ser el total de casillas disponibles(Filas x Columnas), ya que este es el largo máximo que puede tener un camino 
-%% pues por definición este no repite casillas.
+%% pues por definición este no repite casillas. Sería el camino que recorre todo el tablero. De esta manera, el predicado no se cuelga.
 
 %% 6.1. Analizar la reversibilidad de los parámetros Inicio y Camino justificando adecuadamente en
 %% cada caso por qué el predicado se comporta como lo hace.
 
-%%Analisis de reversibilidad:
-%%Inicio: No es reversible ya que I se usa en el predicado camino y en este se puede observar que en caminoAux se necesita que este instanciado ya que estaria realizando una operacion aritmetica (I\=F).
-%%Camino
+%% Ambos parámetros son argumentos en el llamado al predicado camino\4. Por lo que su reversibilidad estará regida por este.
+%% Similar a lo que sucedía con Fin en el ejercicio anterior, 
+%% si Inicio no está instanciada, caminoAux/5 instancia Inicio en Fin producto de la primera cláusula.
+%% Ya fue explicado que el resultado de camino/4 si Inicio, ahora instanciada en Fin, es una posición correcta del Tablero que no está ocupada y Camino no está instanciada es Camino = [Inicio].
+%% Por lo que length(Camino, N) es verdadera si sólo si N = 1. Esto sucede con el primer resultado que arroja between(1, MAX, N). Ya que tanto 1 como MAX siempre están instanciados.
+%% El último debido a que NumColumnas y NumFilas siempre están instanciado porque Tablero debe estarlo. 
+%% Entonces, camino2\4 arrojará un único resultado que es [Inicio] en este caso.
+%% Si al instanciar Inicio con Fin, esta no es una posición correcta del Tablero, por lo explicado en el ejercicio anterior el resultado de camino\4 será false y por ende el de camino2\4 también.
+%% Al igual que lo sucedido en el ejercicio anterior, entendemos que este comportamiento no sería el esperado.
+
+%% Si tanto Inicio, Fin y Tablero están instanciadas al llamar camino\4 ya fue explicado por qué Camino es reversible. Esto implica que siempre length(Camino, N) tendrá ambos argumentos 
+%% instanciados. 
+%% Si Camino está instanciada, y el resto de los parámetros también, la respuesta de camino2\4 será verdadera si la de camino\4 lo es. Esto porque, por lo ya explicado, el largo del Camino
+%% será entre 1 y el total de casillas del tablero. A este valor una única vez estará instanciado en N debido al between, logrando que valga length(Camino, N) y el predicado sea verdadero.
+%% Como la respuesta de camino\4 con Camino instanciado es única y sólo una vez se cumplirá length(Camino, N), la respuesta de camino2\4 no tendrá repetidos y será verdadera cuando
+%% Camino es un camino válido en Tablero que une Inicio y Fin. Este es el comportamiento esperado.
+%% Si Camino no está instanciada, ya fue explicado que camino\4 arrojará todos los caminos válidos de Inicio a Fin en el Tablero. Por lo que camino\2 arrojará estos mismos caminos a medida que
+%% vayan cumpliendo length(Camino, N). El valor de N es instanciado por between(1, MAX, N). A medida que existan, camino\2 arrojará los caminos de largo 1, al pedir más resultado los de largo 2,
+%% luego los de largo 3 y así sucesivamente hasta el largo máximo, que es el camino que cubre todo el tablero. Este es el comportamiento esperado.
+
+%% Concluimos que Camino es reversible e Inicio no.
 
 %% Ejercicio 7
 %% caminoOptimo(+Inicio, +Fin, +Tablero, -Camino) será verdadero cuando Camino sea un
