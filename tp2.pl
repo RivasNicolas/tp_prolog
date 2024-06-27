@@ -10,12 +10,6 @@ tablero(Filas,Columnas,[Lista|Tablero]) :- Filas > 0, Columnas > 0, FilasAnterio
 
 %% Ejercicio 2
 %% ocupar(+Pos,?Tablero) será verdadero cuando la posición indicada esté ocupada.
-%%FM = filaMatriz
-%%FSM = filasMatriz
-%%CSM = columnasMatriz
-%%CM = columnaMatriz
-%%F = cantidadFilas
-%%C = cantidadColumnas
 
 %% Generación infinita de tableros.
 %% tablero2(+Casillas, -Tablero, -Filas, -Columnas) será verdadero cuando la cantidad de celdas del Tablero sea igual a Casillas, con tantas filas como Filas y tantas columnas como Columnas.
@@ -162,16 +156,12 @@ caminoOptimo(Inicio,Fin,Tablero,Camino) :- camino(Inicio, Fin, Tablero, Camino),
 %% ComentarioDelGrupo:
 %% Utiliza la técnica de Generate&Test. Se generan los caminos del tablero, para luego testear cuáles cumplen con la propiedad de ser óptimos.
 
-%%%%%%%%%%%%%%%%%%%%%%%%
-%% Tableros simultáneos
-%%%%%%%%%%%%%%%%%%%%%%%%
-
 %% Ejercicio 8
 %% caminoDual(+Inicio, +Fin, +Tablero1, +Tablero2, -Camino) será verdadero
 %% cuando Camino sea un camino desde Inicio hasta Fin pasando al mismo tiempo
 %% sólo por celdas transitables de ambos tableros.
 
-caminoDual(Inicio,Fila,Tablero1,Tablero2,Camino) :- camino(Inicio, Fila, Tablero1, Camino), camino(Inicio, Fila, Tablero2, Camino).
+caminoDual(Inicio,Fin,Tablero1,Tablero2,Camino) :- camino(Inicio, Fin, Tablero1, Camino), camino(Inicio, Fin, Tablero2, Camino).
 
 %% ComentarioDelGrupo:
 %% Utiliza la técnica de Generate&Test. Se generan los caminos del tablero 1, para luego testear cuáles son caminos del tablero 2.
@@ -183,95 +173,141 @@ caminoDual(Inicio,Fila,Tablero1,Tablero2,Camino) :- camino(Inicio, Fila, Tablero
 % Tableros
 tablero(ej5x5, T) :- tablero(5, 5, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T).
 tablero(ej4x4, T) :- tablero(4, 4, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T), ocupar(pos(0, 0),T).
+tablero(ej4x4FilaOc, T):- tablero(4,4,T), ocupar(pos(2,0), T), ocupar(pos(2,1),T), ocupar(pos(2,2),T), ocupar(pos(2,3),T).
 tablero(ej4x3, T) :- tablero(4, 3, T), ocupar(pos(2, 0), T), ocupar(pos(2, 1), T).
 tablero(ej3x3, T) :- tablero(3, 3, T), ocupar(pos(1, 1), T), ocupar(pos(1, 2), T).
 tablero(ej3x3sinVecLib, T) :- tablero(3, 3, T), ocupar(pos(1, 0), T), ocupar(pos(0, 1), T), ocupar(pos(1, 2), T), ocupar(pos(2, 1), T).
+tablero(ej3x2, T) :- tablero(3, 2, T), ocupar(pos(1, 0), T).
 tablero(ej2x2, T) :- tablero(2, 2, T).
 
-cantidadTestsTablero(8). % Actualizar con la cantidad de tests que entreguen
-testTablero(1) :- tablero(0,0,[]). 
-testTablero(2) :- ocupar(pos(0,0), [[ocupada]]).
-% Tablero generico
+% Tests tablero(+Filas,+Columnas,-Tablero) y ocupar(+Pos,?Tablero).
+cantidadTestsTablero(9).
+% Respuesta esperada: T = [].
+testTablero(1) :- tablero(0,0,T). 
+% Respuesta esperada: Tableros con la posición (0,1) ocupada. Ejemplos: T = [[_, ocupada]]; T = [[_, ocupada], [_, _]]; T = [[_, ocupada, _]]; ...
+testTablero(2) :- ocupar(pos(0,1), T).
+% Tablero genérico. ---> Respuesta esperada: T = [[ocupada, _, _, _], [_, ocupada, ocupada, _], [_, _, _, _], [_, _, _, _]].
 testTablero(3) :- tablero(ej4x4, T).
-% Que ocupe una posicion fuera del tablero
-testTablero(4) :- tablero(ej4x4, T), ocupar(pos(4, 3), T). 
-% Que ocupe una posicion que ya esta ocupada
+% Que ocupe una posición fuera del tablero. ---> Respuesta esperada: false.
+testTablero(4) :- tablero(ej4x4, T), not(ocupar(pos(4, 3), T)). 
+% Que ocupe una posición que ya está ocupada. ---> Respuesta esperada: T = [[_, _, _, _], [_, ocupada, _, _], [_, _, _, _], [_, _, _, _]].
 testTablero(5) :- tablero(ej4x4, T), ocupar(pos(1, 1), T).
-% Crear un tablero con filas y/o columnas negativas.
-testTablero(6) :- tablero(-2,-2,T).
-% Tablero con una Fila/Columna entera ocupada (Sirve para testear camino)
+% Crear un tablero con filas y/o columnas negativas. ---> Respuesta esperada: false.
+testTablero(6) :- not((tablero(-2,-2,T))).
+% Tablero con una fila entera ocupada ---> Respuesta esperada: T = [[_, _, _, _], [_, _, _, _], [ocupada, ocupada, ocupada, ocupada], [_, _, _, _]].
 testTablero(7) :- tablero(4,4,T), ocupar(pos(2,0), T), ocupar(pos(2,1),T), ocupar(pos(2,2),T), ocupar(pos(2,3),T).
-% Tablero todo ocupado.
+% Tablero todo ocupado. ---> Respuesta esperada: T = [[ocupada, ocupada], [ocupada, ocupada]].
 testTablero(8) :- tablero(2,2,T), ocupar(pos(0,0), T), ocupar(pos(1,0), T), ocupar(pos(0,1), T), ocupar(pos(1,1),T).
-% Tablero no cuadrado
+% Tablero no cuadrado. ---> Respuesta esperada: T = [[_, _, _], [_, _, _], [ocupada, ocupada, _]].
+testTablero(9) :- tablero(4, 3, T), ocupar(pos(2, 0), T), ocupar(pos(2, 1), T).
 
-% Tests Ideas:
-% Tablero generico
-% Que ocupe una que no exista
-% Que ocupe una que ya esta ocupada
-% Que ocupe una que no esta ocupada, Ya Fue testeado con tablero Generico
-% Crear un tablero con filas y/o columnas negativas.
-% Tablero con una Fila/Columna entera ocupada (Sirve para testear camino)
-% Tablero todo ocupado
-
-% Agregar más tests
-
-cantidadTestsVecino(1). % Actualizar con la cantidad de tests que entreguen
-testVecino(1) :- vecino(pos(0,0), [[_,_]], pos(0,1)).
-%Testear vecinos en los bordes  ---> Respuesta esperada: V=pos(0,1), V=pos(1,0)
-testVecino(2) :- tablero(ej2x2, T) , vecino(pos(1,1), T, V)
-%Posición inválida ---> Respuesta esperada: false
-testVecino(3) :- tablero(ej2x2, T), vecino(pos(3,3), T, V).
-%Caso con 4 respuestas posibles (incluso si algún vecino esta ocupado) ---> Respuesta esperada: V=pos(0,1), V=pos(1,0), V=pos(1,2), V=pos(2,1).
+% Tests vecino(+Pos, +Tablero, -PosVecino)
+% Aclaración: cuando se dice que el orden es indistinto, esto no alcanza al false. Debe ser la última respuesta.
+cantidadTestsVecino(8).
+% Respuesta esperada: V = pos(0,1); false.
+testVecino(1) :- vecino(pos(0,0), [[_,_]], V).
+% Testear vecinos en los bordes  ---> Respuesta esperada con orden indistinto: V=pos(0,1); V=pos(1,0); false.
+testVecino(2) :- tablero(ej2x2, T) , vecino(pos(1,1), T, V).
+% Posición inválida ---> Respuesta esperada: false.
+testVecino(3) :- tablero(ej2x2, T), not(vecino(pos(3,3), T, V)).
+% Caso con 4 respuestas posibles (incluso si algún vecino está ocupado) ---> Respuesta esperada con orden indistinto: V=pos(0,1); V=pos(1,0); V=pos(1,2); V=pos(2,1); false.
 testVecino(4) :- tablero(ej3x3, T), vecino(pos(1,1), T, V).
 
-%Tests Ideas Vecinos:
-%Testear vecinos en los bordes
-%Posición inválida
-%Genérico
-
-%TESTS VECINO LIBRE
-%Posición sin vecinos libres al estar todos ocupados ---> Respuesta esperada: false.
-testVecino(5) :- tablero(ej3x3sinVecLib, T), vecinoLibre(pos(1,1), T, VL).
-%Posición con algún vecinos libres y vecinos ocupados, además se prueba que pasa si el origen está ocupado ---> Respuesta esperada: VL=pos(0,1), VL=pos(1,0), VL=pos(2,1).
+% Tests vecinoLibre(+Pos, +Tablero, -PosVecino)
+% Posición sin vecinos libres al estar todos ocupados ---> Respuesta esperada: false.
+testVecino(5) :- tablero(ej3x3sinVecLib, T), not(vecinoLibre(pos(1,1), T, VL)).
+% Posición con algún vecino libre y vecinos ocupados, además se prueba que pasa si el origen está ocupado ---> 
+% Respuesta esperada con orden indistinto: VL=pos(0,1); VL=pos(1,0); VL=pos(2,1); false.
 testVecino(6) :- tablero(ej3x3, T), vecinoLibre(pos(1,1), T, VL).
-%Posición con todos los vecinos libres ---> Respuesta esperada: VL=pos(0,1), VL=pos(1,0), VL=pos(1,2), VL=pos(2,1).
+% Posición con todos los vecinos libres ---> Respuesta esperada con orden indistinto: VL=pos(0,1); VL=pos(1,0); VL=pos(1,2); VL=pos(2,1); false.
 testVecino(7) :- tablero(3, 3, T), vecinoLibre(pos(1,1),T,VL).
+% Posición inválida ---> Respuesta esperado: false.
+testVecino(8) :- tablero(3, 3, T), not(vecinoLibre(pos(2, 3), T, VL)).
 
-%Tests Ideas Vecino Libres: (Con los anteriores ya esta, solo agregamos un par)
-%Posicion sin vecinos libres.
-%Posicion con algun vecino libre.
-%Posicion con todos libres.
-%Posicion de origen ocupada
-
-
-% Agregar más tests
-
-cantidadTestsCamino(0). % Actualizar con la cantidad de tests que entreguen
-
-% Tests Ideas:
-/*Tests camino(+Inicio, +Fin, +Tablero, -Camino) ---> 
-  Respuesta esperada: 
-  C=[pos(0, 1), pos(1, 1), pos(1, 0)], 
-  C=[pos(0, 1), pos(0, 2), pos(1, 2), pos(1, 1), pos(1, 0)],
-  C=[pos(0, 1), pos(0, 0), pos(1, 0)].*/
+% Tests camino(+Inicio, +Fin, +Tablero, -Camino) 
+cantidadTestsCamino(18). 
+/* Camino con muchos caminos válidos ---> 
+   Respuesta esperada: estos tres caminos(el orden es indistinto) 
+   C=[pos(0, 1), pos(1, 1), pos(1, 0)], 
+   C=[pos(0, 1), pos(0, 2), pos(1, 2), pos(1, 1), pos(1, 0)],
+   C=[pos(0, 1), pos(0, 0), pos(1, 0)].*/
 testCamino(1):- tablero(ej4x3,T), camino(pos(0,1), pos(1,0), T, C).
-% Camino donde Inicio = Fin
-% Camino donde Inicio /= Fin Generico
-% Camino que empiece desde un Inicio ocupado.
-% Camino que termine en un Fin ocupado.
-% No existe camino.
-% Inicio o Fin fuera del tablero OJO
+% Camino con un sólo camino válido ---> Respuesta esperada: C=[pos(0, 0), pos(1, 0), pos(2, 0)]; false.
+testCamino(2):- tablero(ej3x3,T), camino(pos(0,0), pos(2,0), T, C).
+% Camino donde Inicio es igual a Fin ---> Respuesta esperada: C=[pos(0,1)]; false.
+testCamino(3):- tablero(ej4x3,T), camino(pos(0,1), pos(0,1), T, C).
+% Camino que empiece desde un Inicio ocupado ---> Respuesta esperada: false.
+testCamino(4):- tablero(ej4x3,T), not(camino(pos(2,0), pos(0,1), T, C)). 
+% Camino que termine en un Fin ocupado ---> Respuesta esperada: false.
+testCamino(5):- tablero(ej4x3,T), not(camino(pos(0,1), pos(2,0), T, C)). 
+% No existe camino ---> Respuesta esperada: false.
+testCamino(6):- tablero(ej4x4FilaOc, T), not((camino(pos(0,1), pos(2,0), T, C))).
+% Inicio fuera del tablero ---> Respuesta esperada: false.
+testCamino(7):- tablero(ej3x3,T), not(camino(pos(4,1), pos(2,0), T, C)). 
+% Fin fuera del tablero ---> Respuesta esperada: false.
+testCamino(8):- tablero(ej3x3,T), not(camino(pos(2,0), pos(4,0), T, C)). 
 
-% Tests camino(+Inicio, +Fin, +Tablero, +Camino).
-% Pasarle un Inicio, Fin, Tablero y un camino valido.
-% Pasarle un Inicio, Fin, Tablero y un camino no valido.
+% Tests camino2(+Inicio, +Fin, +Tablero, -Camino) 
+/* Camino con muchos caminos válidos todos tamaños distintos ---> 
+   Respuesta esperada: estos tres caminos en este orden 
+    C = [pos(0, 0), pos(1, 0)] ;
+    C = [pos(0, 0), pos(0, 1), pos(1, 1), pos(1, 0)] ;
+    C = [pos(0, 0), pos(0, 1), pos(0, 2), pos(1, 2), pos(1, 1), pos(1, 0)]*/
+testCamino(9):- tablero(ej4x3,T), camino2(pos(0,0), pos(1,0), T, C).
+/* Camino con muchos caminos válidos ---> 
+   Respuesta esperada: primero estos dos caminos que tienen el mismo tamaño en cualquier orden:
+   C=[pos(0, 1), pos(1, 1), pos(1, 0)];
+   C=[pos(0, 1), pos(0, 0), pos(1, 0)]; 
+   Y luego este de tamaño mayor:
+   C=[pos(0, 1), pos(0, 2), pos(1, 2), pos(1, 1), pos(1, 0)]; */
+testCamino(10):- tablero(ej4x3,T), camino2(pos(0,1), pos(1,0), T, C).
+% Camino con un sólo camino válido ---> Respuesta esperada: C=[pos(0, 0), pos(1, 0), pos(2, 0)] 
+testCamino(11):- tablero(ej3x3,T), camino2(pos(0,1), pos(2,0), T, C).
+% Camino donde Inicio es igual a Fin ---> Respuesta esperada: C=[pos(0,1)]
+testCamino(12):- tablero(ej4x3,T), camino2(pos(0,1), pos(0,1), T, C).
+% Camino que empiece desde un Inicio ocupado ---> Respuesta esperada: false.
+testCamino(13):- tablero(ej4x3,T), not(camino2(pos(2,0), pos(0,1), T, C)). 
+% Camino que termine en un Fin ocupado ---> Respuesta esperada: false.
+testCamino(14):- tablero(ej4x3,T), not(camino2(pos(0,1), pos(2,0), T, C)). 
+% No existe camino ---> Respuesta esperada: false.
+testCamino(15):- tablero(ej4x4FilaOc, T), not(camino2(pos(0,1), pos(2,0), T, C)).
+% Inicio fuera del tablero ---> Respuesta esperada: false.
+testCamino(16):- tablero(ej3x3,T), not(camino2(pos(4,1), pos(2,0), T, C)). 
+% Fin fuera del tablero ---> Respuesta esperada: false.
+testCamino(17):- tablero(ej3x3,T), not(camino2(pos(2,0), pos(4,0), T, C)). 
+% Muchos caminos. La idea del test es que se visualice cómo al pedir más resultados la longitud del camino de respuesta siempre es mayor o igual.
+testCamino(18):- tablero(ej5x5, T), camino2(pos(2,0), pos(4,4), T, C).
 
-% IDEM los de camino2
+cantidadTestsCaminoOptimo(10). % Actualizar con la cantidad de tests que entreguen
 
-% Agregar más tests
-
-cantidadTestsCaminoOptimo(0). % Actualizar con la cantidad de tests que entreguen
+/* Camino con muchos caminos válidos y un único camino óptimo ---> 
+   Respuesta esperada:
+    C = [pos(0, 0), pos(1, 0)] ; */
+testCaminoOptimo(1):- tablero(ej4x3,T), caminoOptimo(pos(0,0), pos(1,0), T, C).
+/* Camino con muchos caminos válidos y muchos caminos optimos ---> 
+   Respuesta esperada: estos dos caminos minimos que tienen el mismo tamaño en cualquier orden:
+   C=[pos(0, 1), pos(1, 1), pos(1, 0)];
+   C=[pos(0, 1), pos(0, 0), pos(1, 0)]; */
+testCaminoOptimo(2):- tablero(ej4x3,T), caminoOptimo(pos(0,1), pos(1,0), T, C).
+% Camino con un sólo camino válido ---> Respuesta esperada: C=[pos(0, 0), pos(1, 0), pos(2, 0)]; false.
+testCaminoOptimo(3):- tablero(ej3x3,T), caminoOptimo(pos(0,0), pos(2,0), T, C).
+% Camino donde Inicio es igual a Fin ---> Respuesta esperada: C=[pos(0,1)]; false.
+testCaminoOptimo(4):- tablero(ej4x3,T), caminoOptimo(pos(0,1), pos(0,1), T, C).
+% Camino que empiece desde un Inicio ocupado ---> Respuesta esperada: false.
+testCaminoOptimo(5):- tablero(ej4x3,T), not(caminoOptimo(pos(2,0), pos(0,1), T, C)). 
+% Camino que termine en un Fin ocupado ---> Respuesta esperada: false.
+testCaminoOptimo(6):- tablero(ej4x3,T), not(caminoOptimo(pos(0,1), pos(2,0), T, C)). 
+% No existe camino ---> Respuesta esperada: false.
+testCaminoOptimo(7):- tablero(ej4x4FilaOc, T), not(caminoOptimo(pos(0,1), pos(2,0), T, C)).
+% Inicio fuera del tablero ---> Respuesta esperada: false.
+testCaminoOptimo(8):- tablero(ej3x3,T), not(caminoOptimo(pos(4,1), pos(2,0), T, C)). 
+% Fin fuera del tablero ---> Respuesta esperada: false.
+testCaminoOptimo(9):- tablero(ej3x3,T), not(caminoOptimo(pos(2,0), pos(4,0), T, C)). 
+/* Camino con muchos caminos válidos en un tablero grande -->
+    Respuesta esperada: estos dos caminos mínimos que tienen el mismo tamaño en cualquier orden:
+    C=[pos(0,0), pos(0,1), pos(0,2), pos(0,3), pos(1,3), pos(2,3)];
+    C=[pos(0,0), pos(1,0), pos(2,0), pos(2,1), pos(2,2), pos(2,3)]*/
+testCaminoOptimo(10):- tablero(ej5x5,T), caminoOptimo(pos(0,0), pos(2,3), T, C).  
 
 % Tests Ideas:
 % Caso generico sin camino instanciado
@@ -280,17 +316,40 @@ cantidadTestsCaminoOptimo(0). % Actualizar con la cantidad de tests que entregue
 
 % Agregar más tests
 
-cantidadTestsCaminoDual(0). % Actualizar con la cantidad de tests que entreguen
+cantidadTestsCaminoDual(9). % Actualizar con la cantidad de tests que entreguen
 
 % Tests Ideas:
-% Test con dos tableros que no tengan camino posible entre los dos
-% Test con dos tableros que si tengan camino posible y tengan mas de uno
-% Test con los dos tableros iguales
-% Test con tableros de distintos tamaños
+% Test con dos tableros que no tengan camino posible entre los dos ---> Respuesta esperada: false.
+testCaminoDual(1):- tablero(ej3x3,T1), tablero(ej3x2, T2), not(caminoDual(pos(0,0),pos(2,0),T1,T2,C)).
+/* Test con dos tableros que sí tengan camino posible y tengan más de uno ---> 
+   Respuesta esperada: estos tres caminos en cualquier orden
+   C=[pos(0,0),pos(1,0),pos(1,1)];
+   C=[pos(0,0),pos(0,1),pos(1,1)];
+   C=[pos(0,0),pos(0,1),pos(0,2),pos(1,2),pos(1,1)]. */
+testCaminoDual(2):- tablero(ej4x3,T1), tablero(ej4x4FilaOc, T2), caminoDual(pos(0,0),pos(1,1),T1,T2,C).
+/* Repetimos el test de arriba inviertiendo tableros para ver que es indistinto ---> 
+   Respuesta esperada: estos tres caminos en cualquier orden
+   C=[pos(0,0),pos(1,0),pos(1,1)];
+   C=[pos(0,0),pos(0,1),pos(1,1)];
+   C=[pos(0,0),pos(0,1),pos(0,2),pos(1,2),pos(1,1)]. */
+testCaminoDual(3):- tablero(ej4x4FilaOc, T1), tablero(ej4x3,T2), caminoDual(pos(0,0),pos(1,1),T1,T2,C).
+% Dos tableros iguales ---> Respuesta esperada: la unica solucion posible del tablero
+% C=[pos(0,0),pos(1,0),pos(2,0)].
+testCaminoDual(4):- tablero(ej3x3,T1), tablero(ej3x3, T2), caminoDual(pos(0,0),pos(2,0),T1,T2,C).
+% Posición de Inicio inválida para un tablero ---> Respuesta esperada: false.
+testCaminoDual(5):- tablero(ej3x2, T1), tablero(ej3x3, T2), not(caminoDual(pos(0, 2),pos(0,0),T1,T2,C)).
+% Caso anterior pero con la posición de los argumentos de los tableros invertida. Misma respuesta esperada.
+testCaminoDual(6):- tablero(ej3x3, T1), tablero(ej3x2, T2), not(caminoDual(pos(0, 2),pos(0,0),T1,T2,C)).
+% Posición de Inicio inválida para ambos tableros ---> Respuesta esperada: false,
+testCaminoDual(7):- tablero(ej4x4, T1), tablero(ej4x3, T2), not(caminoDual(pos(3,4),pos(3,0),T1,T2,C)).
+% Posición de Fin inválida para un tablero ---> Respuesta esperada: false.
+testCaminoDual(8):- tablero(ej4x4FilaOc, T1), tablero(ej3x2, T2), not(caminoDual(pos(0,0),pos(1,2),T1,T2,C)).
+% Posición de Fin inválida para ambos tableros --> Respuesta esperada: false.
+testCaminoDual(9):- tablero(ej4x4FilaOc, T1), tablero(ej4x4, T2), not(caminoDual(pos(0,0),pos(4,4),T1,T2,C)).
 
 % Agregar más tests
 
-tests(tablero) :- cantidadTestsTablero(M), forall(between(1,M,N), testTablero(N)).
+tests(tablero) :- cantidadTestsTablero(M), forall(between(1,9,N), testTablero(N)).
 tests(vecino) :- cantidadTestsVecino(M), forall(between(1,M,N), testVecino(N)).
 tests(camino) :- cantidadTestsCamino(M), forall(between(1,M,N), testCamino(N)).
 tests(caminoOptimo) :- cantidadTestsCaminoOptimo(M), forall(between(1,M,N), testCaminoOptimo(N)).
