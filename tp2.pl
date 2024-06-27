@@ -21,13 +21,13 @@ tablero(Filas,Columnas,[Lista|Tablero]) :- Filas > 0, Columnas > 0, FilasAnterio
 %% tablero2(+Casillas, -Tablero, -Filas, -Columnas) será verdadero cuando la cantidad de celdas del Tablero sea igual a Casillas, con tantas filas como Filas y tantas columnas como Columnas.
 tablero2(Casillas, Tablero, Filas, Columnas) :- between(1, Casillas, Filas), Columnas is Casillas / Filas, Casillas is Filas * Columnas, tablero(Filas, Columnas, Tablero).
 
-%% desde(+X, -Y)
+%% desde(+X, -Y) será verdadero cuando X <= Y
 desde(X, X).
 desde(X, Y) :- N is X + 1, desde(N, Y).
 
-ocupar(pos(0,0), T) :- nonvar(T), T = [[ocupada|_]|_].
-ocupar(pos(0, C), T) :- nonvar(T), T = [[_|CSM]|FSM], C > 0, C1 is C - 1, ocupar(pos(0, C1), [CSM|FSM]).
-ocupar(pos(F, C), T) :- nonvar(T), T = [_|FSM], F > 0, F1 is F - 1, ocupar(pos(F1, C), FSM).
+ocupar(pos(0,0), Tablero) :- nonvar(Tablero), Tablero = [[ocupada|_]|_].
+ocupar(pos(0, Columna), Tablero) :- nonvar(Tablero), Tablero = [[_|ColumnasMatriz]|FilasMatriz], Columna > 0, Columna1 is Columna - 1, ocupar(pos(0, Columna1), [ColumnasMatriz|FilasMatriz]).
+ocupar(pos(Fila, Columna), Tablero) :- nonvar(Tablero), Tablero = [_|FilasMatriz], Fila > 0, Fila1 is Fila - 1, ocupar(pos(Fila1, Columna), FilasMatriz).
 ocupar(pos(Fila, Columna), Tablero) :- var(Tablero), CasillasMin is (Fila + 1) * (Columna + 1), desde(CasillasMin, Casillas), 
                                         tablero2(Casillas, Tablero, Filas, Columnas), Filas > Fila, Columnas > Columna, ocupar(pos(Fila, Columna), Tablero).
 
@@ -52,10 +52,10 @@ vecino(pos(F,C),T,pos(F,C2)):- posicionCorrecta(pos(F, C), T), C2 is C - 1, posi
 %% vecinoLibre(+Pos, +Tablero, -PosVecino) idem vecino/3 pero además PosVecino
 %% debe ser una celda transitable (no ocupada) en el Tablero
 
-%% estaOcupada(+Pos, +Tablero). Será verdadero cuando la posición indicada esté ocupada y falso cuando este no ocurra.
+%% estaOcupada(+Pos, +Tablero). Será verdadero cuando la posición indicada esté ocupada y falso cuando esto no ocurra.
 estaOcupada(pos(0,0),[[X|_]|_]) :- nonvar(X), X = ocupada.
-estaOcupada(pos(0,C),[[_|CSM]|FSM]) :- C > 0, C1 is C-1, estaOcupada(pos(0,C1),[CSM|FSM]).
-estaOcupada(pos(F,C),[_|FSM]) :- F > 0, F1 is F-1, estaOcupada(pos(F1,C),FSM).
+estaOcupada(pos(0,Columna),[[_|ColumnasMatriz]|FilasMatriz]) :- Columna > 0, Columna1 is Columna-1, estaOcupada(pos(0,Columna1),[ColumnasMatriz|FilasMatriz]).
+estaOcupada(pos(Fila,Columna),[_|FilasMatriz]) :- Fila > 0, Fila1 is Fila-1, estaOcupada(pos(Fila1,Columna),FilasMatriz).
 
 vecinoLibre(Pos,Tablero,PosVecino) :- vecino(Pos,Tablero,PosVecino), not(estaOcupada(PosVecino, Tablero)).
 %% ComentarioDelGrupo: 
@@ -172,6 +172,8 @@ caminoOptimo(Inicio,Fin,Tablero,Camino) :- camino(Inicio, Fin, Tablero, Camino),
 %% sólo por celdas transitables de ambos tableros.
 
 caminoDual(Inicio,Fila,Tablero1,Tablero2,Camino) :- camino(Inicio, Fila, Tablero1, Camino), camino(Inicio, Fila, Tablero2, Camino).
+
+%% ComentarioDelGrupo:
 %% Utiliza la técnica de Generate&Test. Se generan los caminos del tablero 1, para luego testear cuáles son caminos del tablero 2.
 
 %%%%%%%%
